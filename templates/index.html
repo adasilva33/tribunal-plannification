@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Accueil — Plannings{% endblock %}
+{% block content %}
+
+{% if jy %}
+<div class="year-info">
+  <div>
+    <span>Année judiciaire</span>
+    <strong>{{ jy.start_date.strftime('%d/%m/%Y') }} — {{ jy.end_date.strftime('%d/%m/%Y') }}</strong>
+  </div>
+  <div>
+    <span>Durée</span>
+    <strong>{{ (jy.end_date - jy.start_date).days + 1 }} jours</strong>
+  </div>
+  {% if current_user.is_admin %}
+  <div style="margin-left:auto">
+    <a href="{{ url_for('config_year') }}" class="btn btn-secondary btn-sm">Modifier</a>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="toolbar">
+  <h1 style="margin:0">Chambres</h1>
+  {% if current_user.is_admin %}
+  <div style="display:flex;gap:.5rem">
+    <a href="{{ url_for('config_chamber_new') }}" class="btn btn-primary btn-sm">+ Nouvelle chambre</a>
+    <a href="{{ url_for('config_chambers') }}" class="btn btn-secondary btn-sm">Gérer</a>
+  </div>
+  {% endif %}
+</div>
+
+<div class="chamber-grid">
+  {% for chamber in chambers %}
+  <div class="chamber-card">
+    <h3>{{ chamber.name }}</h3>
+    <div class="meta">
+      {% if chamber.days %}<strong>Jours :</strong> {{ chamber.days_display }}<br>{% endif %}
+      {% if chamber.start_time %}<strong>Heure :</strong> {{ chamber.start_time }}<br>{% endif %}
+      {% if chamber.president %}<strong>Président :</strong> {{ chamber.president }}{% endif %}
+    </div>
+    {% if chamber.assesseur_roles %}
+    <div class="meta" style="margin-top:.25rem;font-size:.8rem">
+      <strong>Assesseurs ({{ chamber.assesseur_roles|length }}) :</strong><br>
+      {{ chamber.assesseur_roles|map(attribute='name')|join(', ') }}
+    </div>
+    {% endif %}
+    <div class="actions">
+      <a href="{{ url_for('agenda', chamber_id=chamber.id) }}" class="btn btn-primary btn-sm">Agenda</a>
+      <a href="{{ url_for('agenda_print', chamber_id=chamber.id) }}" class="btn btn-print btn-sm" target="_blank">🖨</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

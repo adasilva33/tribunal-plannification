@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Nouveau juge' if not judge else judge.name }} — Juges{% endblock %}
+{% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('config_index') }}">Configuration</a> ›
+  <a href="{{ url_for('config_judges') }}">Juges</a> ›
+  {{ 'Nouveau juge' if not judge else judge.name }}
+</div>
+<h1>{{ 'Nouveau juge' if not judge else 'Modifier — ' + judge.name }}</h1>
+
+<div class="card" style="max-width:560px">
+  <form method="post">
+    {% if judge %}<input type="hidden" name="action" value="update">{% endif %}
+
+    <div class="form-group" style="margin-bottom:1rem">
+      <label for="name">Nom complet <span style="color:#b71c1c">*</span></label>
+      <input type="text" id="name" name="name" required autofocus
+             value="{{ judge.name if judge else '' }}"
+             placeholder="ex : P. DUPONT" style="width:100%">
+    </div>
+
+    <div class="form-group" style="margin-bottom:1rem">
+      <label for="email">Adresse e-mail (pour la connexion)</label>
+      <input type="email" id="email" name="email"
+             value="{{ judge.email if judge and judge.email else '' }}"
+             placeholder="prenom.nom@tribunal.fr" style="width:100%">
+      <small style="color:#546e7a">Laissez vide pour un juge sans accès à l'application.</small>
+    </div>
+
+    <div class="form-group" style="margin-bottom:1rem">
+      <label for="password">
+        {% if judge %}Nouveau mot de passe{% else %}Mot de passe{% endif %}
+        {% if not judge %}<span style="color:#b71c1c">*</span>{% endif %}
+      </label>
+      <input type="password" id="password" name="password"
+             placeholder="{{ 'Laisser vide pour ne pas modifier' if judge else 'Mot de passe' }}"
+             style="width:100%" {% if not judge %}required{% endif %}>
+      {% if judge and judge.password_hash %}
+      <small style="color:#546e7a">Un mot de passe est déjà défini. Laissez vide pour le conserver.</small>
+      {% endif %}
+    </div>
+
+    <div class="form-row" style="margin-bottom:1.5rem">
+      <label class="checkbox-group">
+        <input type="checkbox" name="is_admin" value="1"
+               {% if judge and judge.is_admin %}checked{% endif %}>
+        Administrateur (accès complet à la configuration)
+      </label>
+      {% if judge %}
+      <label class="checkbox-group">
+        <input type="checkbox" name="is_active" value="1"
+               {% if not judge or judge.is_active %}checked{% endif %}>
+        Compte actif
+      </label>
+      {% endif %}
+    </div>
+
+    <div style="display:flex;gap:.75rem;align-items:center">
+      <button type="submit" class="btn btn-primary">
+        {{ 'Créer' if not judge else 'Enregistrer' }}
+      </button>
+      <a href="{{ url_for('config_judges') }}" class="btn btn-secondary">Annuler</a>
+
+      {% if judge and judge.id != current_user.id %}
+      <form method="post" style="margin-left:auto">
+        <input type="hidden" name="action" value="delete">
+        <button type="submit" class="btn btn-danger btn-sm"
+                onclick="return confirm('Supprimer définitivement {{ judge.name }} ? Cette action est irréversible.')">
+          Supprimer
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+{% if judge %}
+<!-- Chamber roles summary -->
+<div class="card" style="max-width:560px">
+  <h2>Rôles dans les chambres</h2>
+  {% if judge.chamber_roles %}
+  <table class="config-table">
+    <thead><tr><th>Chambre</th><th>Rôle</th><th>Séances assignées</th></tr></thead>
+    <tbody>
+      {% for cr in judge.chamber_roles | sort(attribute='chamber.sort_order') %}
+      <tr>
+        <td><a href="{{ url_for('config_chamber_edit', chamber_id=cr.chamber_id) }}">{{ cr.chamber.name }}</a></td>
+        <td>
+          {% if cr.role == 'president' %}
+            <span class="badge badge-special">Président</span>
+          {% else %}
+            <span class="badge badge-audience">Assesseur</span>
+          {% endif %}
+        </td>
+        <td>
+          {{ cr.judge.assignments | selectattr('chamber_id', 'eq', cr.chamber_id) | selectattr('role', 'eq', cr.role) | list | length }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:#546e7a">Ce juge n'est affecté à aucune chambre.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

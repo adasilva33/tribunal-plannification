@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Juges — Configuration{% endblock %}
+{% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('config_index') }}">Configuration</a> › Juges
+</div>
+
+<div class="toolbar">
+  <h1 style="margin:0">Juges ({{ judges|length }})</h1>
+  <a href="{{ url_for('config_judge_new') }}" class="btn btn-primary">+ Nouveau juge</a>
+</div>
+
+<div class="card">
+  <table class="config-table">
+    <thead>
+      <tr>
+        <th>Nom</th>
+        <th>Email</th>
+        <th>Accès</th>
+        <th>Admin</th>
+        <th>Chambres</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for judge in judges %}
+      <tr>
+        <td><strong>{{ judge.name }}</strong></td>
+        <td>{{ judge.email or '<span style="color:#90a4ae">—</span>'|safe }}</td>
+        <td>
+          {% if not judge.is_active %}
+            <span class="badge badge-pas">Désactivé</span>
+          {% elif judge.can_login %}
+            <span class="badge badge-audience">Peut se connecter</span>
+          {% else %}
+            <span class="badge" style="background:#fff3e0;color:#e65100">Sans accès</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if judge.is_admin %}
+            <span class="badge badge-special">Admin</span>
+          {% endif %}
+        </td>
+        <td style="font-size:.82rem;color:#546e7a">
+          {{ judge.chamber_roles | map(attribute='chamber') | map(attribute='name') | unique | join(', ') | truncate(60) }}
+        </td>
+        <td>
+          <a href="{{ url_for('config_judge_edit', judge_id=judge.id) }}"
+             class="btn btn-secondary btn-sm">Modifier</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card" style="background:#fff8e1;border:1px solid #ffe082">
+  <strong>ℹ️ Accès :</strong> Un juge peut se connecter uniquement s'il possède une adresse email et un mot de passe.
+  Utilisez le bouton "Modifier" pour définir ces informations.
+  Les juges sans accès restent visibles dans les plannings mais ne peuvent pas se connecter.
+</div>
+{% endblock %}

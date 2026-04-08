@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Connexion — Tribunal</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="login-page">
+  <div class="login-card">
+    <div class="login-logo">⚖️</div>
+    <h1 class="login-title">Tribunal<br><span>Plannings des audiences</span></h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+      <div class="flash flash-{{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="post" class="login-form">
+      <div class="form-group">
+        <label for="email">Adresse e-mail</label>
+        <input type="email" id="email" name="email" required autofocus
+               placeholder="exemple@tribunal.fr">
+      </div>
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      <label class="remember-label">
+        <input type="checkbox" name="remember" value="1"> Se souvenir de moi
+      </label>
+      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:.5rem">
+        Se connecter
+      </button>
+    </form>
+  </div>
+</body>
+</html>

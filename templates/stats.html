@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}Statistiques de participation{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+  <h1 style="margin:0">Statistiques de participation</h1>
+</div>
+
+<!-- Chamber coverage -->
+<div class="card" style="margin-bottom:1.5rem">
+  <h2>Couverture par chambre</h2>
+  <table class="config-table">
+    <thead>
+      <tr>
+        <th>Chambre</th>
+        <th>Séances planifiées</th>
+        <th>Total séances annuelles</th>
+        <th>Couverture</th>
+        <th>Assignations totales</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cs in chamber_stats %}
+      {% set pct = (cs.sessions_done / cs.total_audience * 100) | int if cs.total_audience > 0 else 0 %}
+      <tr>
+        <td>
+          <a href="{{ url_for('planning_current', chamber_id=cs.chamber.id) }}">{{ cs.chamber.name }}</a>
+        </td>
+        <td>{{ cs.sessions_done }}</td>
+        <td>{{ cs.total_audience }}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <div class="stat-bar" style="width:100px">
+              <div class="stat-bar-fill {% if pct >= 80 %}sfill-good{% elif pct >= 40 %}sfill-mid{% else %}sfill-low{% endif %}"
+                   style="width:{{ pct }}%"></div>
+            </div>
+            <span>{{ pct }}%</span>
+          </div>
+        </td>
+        <td>{{ cs.total_assigned }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Judge participation -->
+<div class="card">
+  <h2>Participation des juges</h2>
+  <p style="color:#546e7a;font-size:.85rem;margin-bottom:1rem">
+    Trié par nombre total de séances assignées (décroissant).
+    Les juges sans assignation n'apparaissent pas.
+  </p>
+  {% if not judge_stats or judge_stats[0].total == 0 %}
+  <p style="color:#546e7a;text-align:center">Aucune assignation enregistrée pour l'instant.</p>
+  {% else %}
+  <table class="config-table">
+    <thead>
+      <tr>
+        <th>Juge</th>
+        <th>Président</th>
+        <th>Assesseur</th>
+        <th>Total</th>
+        <th style="min-width:160px">Répartition</th>
+        <th>Chambres</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for js in judge_stats %}
+      {% if js.total > 0 %}
+      {% set bar_pct = (js.total / max_total * 100) | int %}
+      <tr>
+        <td><strong>{{ js.judge.name }}</strong></td>
+        <td>{{ js.president }}</td>
+        <td>{{ js.assesseur }}</td>
+        <td><strong>{{ js.total }}</strong></td>
+        <td>
+          <div class="stat-bar">
+            <div class="stat-bar-fill sfill-good" style="width:{{ bar_pct }}%"></div>
+          </div>
+        </td>
+        <td style="font-size:.8rem;color:#546e7a">
+          {% for b in js.breakdown %}
+            <span title="{{ b.chamber.name }}">
+              {{ b.chamber.name[:20] }}{% if b.president %} (P:{{ b.president }}){% endif %}{% if b.assesseur %} (A:{{ b.assesseur }}){% endif %}
+            </span>{% if not loop.last %}, {% endif %}
+          {% endfor %}
+        </td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Judges with zero sessions -->
+  {% set zero_judges = judge_stats | selectattr('total', 'eq', 0) | list %}
+  {% if zero_judges %}
+  <div style="margin-top:1.5rem">
+    <h3 style="color:#b71c1c">⚠ Juges sans assignation</h3>
+    <div class="assesseur-list" style="margin-top:.5rem">
+      {% for js in zero_judges %}
+      <span class="assesseur-chip" style="background:#ffebee;color:#b71c1c">{{ js.judge.name }}</span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

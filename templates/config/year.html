@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Année judiciaire — Configuration{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('config_index') }}">Configuration</a>
+  <span>›</span> Année judiciaire
+</div>
+
+<h1>Année judiciaire</h1>
+
+<!-- Dates -->
+<div class="card">
+  <h2>Période</h2>
+  <form method="post">
+    <input type="hidden" name="action" value="update_year">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="start_date">Début</label>
+        <input type="date" id="start_date" name="start_date"
+               value="{{ jy.start_date.isoformat() if jy else '' }}" required>
+      </div>
+      <div class="form-group">
+        <label for="end_date">Fin</label>
+        <input type="date" id="end_date" name="end_date"
+               value="{{ jy.end_date.isoformat() if jy else '' }}" required>
+      </div>
+      <div>
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Vacations -->
+<div class="card">
+  <h2>Vacations judiciaires</h2>
+
+  {% if vacations %}
+  <table class="config-table" style="margin-bottom:1.5rem">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Début</th>
+        <th>Fin</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in vacations %}
+      <tr>
+        <td>{{ v.label }}</td>
+        <td>{{ v.start_date.strftime('%d/%m/%Y') }}</td>
+        <td>{{ v.end_date.strftime('%d/%m/%Y') }}</td>
+        <td>
+          <form method="post" style="display:inline">
+            <input type="hidden" name="action" value="delete_vacation">
+            <input type="hidden" name="vacation_id" value="{{ v.id }}">
+            <button type="submit" class="btn btn-danger btn-sm"
+                    onclick="return confirm('Supprimer cette vacation ?')">Supprimer</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <h3>Ajouter une vacation</h3>
+  <form method="post">
+    <input type="hidden" name="action" value="add_vacation">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="vtype">Type</label>
+        <select id="vtype" name="type" required>
+          <option value="ete">Été</option>
+          <option value="hiver">Hiver</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="vstart">Début (inclus)</label>
+        <input type="date" id="vstart" name="start_date" required>
+      </div>
+      <div class="form-group">
+        <label for="vend">Fin (inclus)</label>
+        <input type="date" id="vend" name="end_date" required>
+      </div>
+      <div>
+        <button type="submit" class="btn btn-primary">Ajouter</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

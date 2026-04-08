@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% block title %}{{ chamber.name }} — Agenda{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('index') }}">Accueil</a> › {{ chamber.name }}
+</div>
+
+<!-- Chamber header -->
+<div class="agenda-header">
+  <h1>{{ chamber.name }}</h1>
+  <div class="agenda-meta">
+    {% if chamber.days %}
+    <div class="agenda-meta-item">
+      <span class="label">Jours</span>
+      <span class="value">{{ chamber.days_display }}</span>
+    </div>
+    {% endif %}
+    {% if chamber.start_time %}
+    <div class="agenda-meta-item">
+      <span class="label">Heure</span>
+      <span class="value">{{ chamber.start_time }}</span>
+    </div>
+    {% endif %}
+    {% if chamber.president %}
+    <div class="agenda-meta-item">
+      <span class="label">Président désigné</span>
+      <span class="value">{{ chamber.president }}</span>
+    </div>
+    {% endif %}
+  </div>
+  {% if chamber.assesseur_roles %}
+  <div class="assesseurs-list">
+    <strong>Pool assesseurs :</strong>
+    {{ chamber.assesseur_roles|map(attribute='name')|join(' — ') }}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <div class="stats-bar">
+    <div class="stat-chip">
+      <span class="dot dot-audience"></span>
+      {{ stats.complete }}/{{ stats.audience }} séances complètes
+    </div>
+    {% if stats.special %}<div class="stat-chip"><span class="dot dot-special"></span> {{ stats.special }} spécial</div>{% endif %}
+    {% if stats.ferie %}<div class="stat-chip"><span class="dot dot-ferie"></span> {{ stats.ferie }} férié</div>{% endif %}
+    {% if stats.vacation %}<div class="stat-chip"><span class="dot dot-vacation"></span> {{ stats.vacation }} vacation</div>{% endif %}
+  </div>
+  <div style="display:flex;gap:.5rem">
+    {% if current_user.is_admin %}
+    <a href="{{ url_for('config_chamber_edit', chamber_id=chamber.id) }}" class="btn btn-secondary btn-sm">Modifier la composition</a>
+    {% endif %}
+    <a href="{{ url_for('agenda_print', chamber_id=chamber.id) }}" class="btn btn-print btn-sm" target="_blank">🖨 Imprimer</a>
+  </div>
+</div>
+
+<!-- Monthly tables -->
+{% for group in groups %}
+<div class="month-group">
+  <div class="month-title">{{ group.label }}</div>
+  <table class="session-table agenda-full-table">
+    <thead>
+      <tr>
+        <th style="width:90px">Jour</th>
+        <th style="width:100px">Date</th>
+        <th style="width:110px">Statut</th>
+        <th class="col-president">Président audience</th>
+        <th class="col-assesseurs">Assesseurs</th>
+        <th style="width:160px">Note</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in group.sessions %}
+      {% set row_class = {
+        'audience':    'row-audience',
+        'special':     'row-special',
+        'ferie':       'row-ferie',
+        'vacation':    'row-vacation',
+        'pas_audience':'row-pas',
+      }[s.status] %}
+      <tr class="{{ row_class }} {% if s.status == 'audience' and not s.is_complete %}row-incomplete{% endif %}"
+          id="s-{{ s.date.isoformat() }}">
+
+        <td>{{ s.weekday }}</td>
+        <td>{{ s.date.strftime('%d/%m/%Y') }}</td>
+        <td>
+          {% if s.status == 'audience' %}
+            {% if s.is_complete %}
+              <span class="badge badge-audience">✓ Audience</span>
+            {% else %}
+              <span class="badge badge-incomplete">⚠ Audience</span>
+            {% endif %}
+          {% elif s.status == 'special' %}
+            <span class="badge badge-special">Spécial</span>
+          {% elif s.status == 'ferie' %}
+            <span class="badge badge-ferie">Férié</span>
+          {% elif s.status == 'vacation' %}
+            <span class="badge badge-vacation">Vacation</span>
+          {% elif s.status == 'pas_audience' %}
+            <span class="badge badge-pas">Pas d'audience</span>
+          {% endif %}
+        </td>
+
+        <!-- Président -->
+        <td class="col-president">
+          {% if s.status == 'audience' %}
+            <div class="cell-judges">
+              {% for a in s.presidents %}
+              <span class="person-chip chip-pres">
+                {{ a.judge.name }}
+                {% if current_user.is_admin %}
+                <form method="post" style="display:inline">
+                  <input type="hidden" name="action" value="unassign">
+                  <input type="hidden" name="assignment_id" value="{{ a.id }}">
+                  <input type="hidden" name="date" value="{{ s.date.isoformat() }}">
+                  <button class="chip-remove" title="Retirer">×</button>
+                </form>
+                {% endif %}
+              </span>
+              {% endfor %}
+              {% if current_user.is_admin and s.available_presidents %}
+              <form method="post" class="inline-assign-form">
+                <input type="hidden" name="action" value="assign">
+                <input type="hidden" name="date" value="{{ s.date.isoformat() }}">
+                <input type="hidden" name="role" value="president">
+                <select name="judge_id" class="assign-select" required>
+                  <option value="">+ Ajouter…</option>
+                  {% for j in s.available_presidents %}
+                  <option value="{{ j.id }}">{{ j.name }}</option>
+                  {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary btn-xs">✓</button>
+              </form>
+              {% elif not s.presidents %}
+              <span class="cell-empty">—</span>
+              {% endif %}
+            </div>
+          {% else %}
+            <span class="cell-empty">—</span>
+          {% endif %}
+        </td>
+
+        <!-- Assesseurs -->
+        <td class="col-assesseurs">
+          {% if s.status == 'audience' %}
+            <div class="cell-judges">
+              {% for a in s.assesseurs_assigned %}
+              <span class="person-chip chip-asses">
+                {{ a.judge.name }}
+                {% if current_user.is_admin %}
+                <form method="post" style="display:inline">
+                  <input type="hidden" name="action" value="unassign">
+                  <input type="hidden" name="assignment_id" value="{{ a.id }}">
+                  <input type="hidden" name="date" value="{{ s.date.isoformat() }}">
+                  <button class="chip-remove" title="Retirer">×</button>
+                </form>
+                {% endif %}
+              </span>
+              {% endfor %}
+              {% if current_user.is_admin and s.available_assesseurs %}
+              <form method="post" class="inline-assign-form">
+                <input type="hidden" name="action" value="assign">
+                <input type="hidden" name="date" value="{{ s.date.isoformat() }}">
+                <input type="hidden" name="role" value="assesseur">
+                <select name="judge_id" class="assign-select" required>
+                  <option value="">+ Ajouter…</option>
+                  {% for j in s.available_assesseurs %}
+                  <option value="{{ j.id }}">{{ j.name }}</option>
+                  {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary btn-xs">✓</button>
+              </form>
+              {% elif not s.assesseurs_assigned %}
+              <span class="cell-empty">—</span>
+              {% endif %}
+            </div>
+          {% else %}
+            <span class="cell-empty">—</span>
+          {% endif %}
+        </td>
+
+        <td>{{ s.note }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endfor %}
+
+{% if not groups %}
+<div class="card" style="text-align:center;color:#546e7a">Aucune séance trouvée.</div>
+{% endif %}
+
+{% endblock %}
