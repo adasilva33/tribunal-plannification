@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Mon planning — {{ current_user.name }}{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+  <h1 style="margin:0">Mon planning — {{ current_user.name }}</h1>
+  <div style="display:flex;gap:.5rem">
+    <a href="{{ url_for('my_schedule_ics') }}" class="btn btn-secondary btn-sm">⬇ Export .ics</a>
+  </div>
+</div>
+
+<p style="color:#546e7a;font-size:.88rem;margin-bottom:1.5rem">
+  Toutes vos séances assignées. Exportez le fichier .ics pour l'importer dans votre agenda (Outlook, Google Calendar, Apple Calendar…).
+</p>
+
+{% if not grouped %}
+<div class="card" style="text-align:center;color:#546e7a;padding:3rem">
+  Aucune séance assignée pour l'instant.
+</div>
+{% endif %}
+
+{% for group in grouped %}
+<div class="month-group">
+  <div class="month-title">{{ group.label }}</div>
+  <table class="session-table">
+    <thead>
+      <tr>
+        <th>Jour</th>
+        <th>Date</th>
+        <th>Chambre</th>
+        <th>Rôle</th>
+        <th>Heure</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in group.assignments %}
+      <tr class="{{ 'row-special' if a.role == 'president' else '' }}">
+        <td>{{ a.date | fr_weekday }}</td>
+        <td>{{ a.date.strftime('%d/%m/%Y') }}</td>
+        <td>
+          <a href="{{ url_for('agenda', chamber_id=a.chamber_id) }}">{{ a.chamber.name }}</a>
+        </td>
+        <td>
+          {% if a.role == 'president' %}
+            <span class="badge badge-special">Président</span>
+          {% else %}
+            <span class="badge badge-audience">Assesseur</span>
+          {% endif %}
+        </td>
+        <td>{{ a.chamber.start_time or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endfor %}
+
+{% endblock %}

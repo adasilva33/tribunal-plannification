@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block title %}{{ chamber.name }} — Modifier{% endblock %}
+{% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('config_index') }}">Configuration</a> ›
+  <a href="{{ url_for('config_chambers') }}">Chambres</a> › {{ chamber.name }}
+</div>
+<h1>{{ chamber.name }}</h1>
+
+<!-- Info générale -->
+<div class="card">
+  <h2>Informations générales</h2>
+  <form method="post">
+    <input type="hidden" name="action" value="update_info">
+    <div class="form-row">
+      <div class="form-group" style="flex:2;min-width:240px">
+        <label for="name">Intitulé</label>
+        <input type="text" id="name" name="name" value="{{ chamber.name }}" required style="width:100%">
+      </div>
+      <div class="form-group">
+        <label for="start_time">Heure de début</label>
+        <input type="text" id="start_time" name="start_time"
+               value="{{ chamber.start_time }}" placeholder="ex : 14h00">
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+  </form>
+</div>
+
+<!-- Jours de séance -->
+<div class="card">
+  <h2>Jours de séance</h2>
+  <form method="post">
+    <input type="hidden" name="action" value="update_days">
+    <div class="checkbox-group">
+      {% for wd_num, wd_name in all_weekdays %}
+      <label>
+        <input type="checkbox" name="weekdays" value="{{ wd_num }}"
+               {% if wd_num in current_weekdays %}checked{% endif %}>
+        {{ wd_name }}
+      </label>
+      {% endfor %}
+    </div>
+    <div style="margin-top:1rem">
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </div>
+  </form>
+</div>
+
+<!-- Composition de la chambre -->
+<div class="card">
+  <h2>Composition</h2>
+  <p style="color:#546e7a;font-size:.85rem;margin-bottom:1rem">
+    Seuls les juges enregistrés dans la base peuvent être ajoutés.
+    Un même juge peut être président dans une chambre et assesseur dans une autre.
+  </p>
+
+  <!-- Président(s) -->
+  <h3>Président(s)</h3>
+  <div class="assesseur-list" style="margin-bottom:1rem">
+    {% for r in chamber.president_roles %}
+    <div class="assesseur-chip" style="background:#e8f5e9">
+      <span class="role-dot" style="background:#2e7d32"></span>
+      {{ r.judge.name }}
+      <form method="post" style="display:inline">
+        <input type="hidden" name="action" value="delete_role">
+        <input type="hidden" name="role_id" value="{{ r.id }}">
+        <button class="chip-remove" onclick="return confirm('Retirer {{ r.judge.name }} ?')">×</button>
+      </form>
+    </div>
+    {% else %}
+    <span style="color:#90a4ae;font-size:.85rem">Aucun président assigné</span>
+    {% endfor %}
+  </div>
+
+  <form method="post" class="form-row" style="margin-bottom:1.5rem">
+    <input type="hidden" name="action" value="add_role">
+    <input type="hidden" name="role" value="president">
+    <div class="form-group" style="flex:1">
+      <label>Ajouter un président</label>
+      <select name="judge_id" required>
+        <option value="">— Choisir un juge —</option>
+        {% for j in all_judges %}
+          {% if (j.id, 'president') not in assigned_combos %}
+          <option value="{{ j.id }}">{{ j.name }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+    </div>
+    <div style="align-self:flex-end">
+      <button type="submit" class="btn btn-primary">Ajouter</button>
+    </div>
+  </form>
+
+  <!-- Assesseurs -->
+  <h3>Assesseurs</h3>
+  <div class="assesseur-list" style="margin-bottom:1rem">
+    {% for r in chamber.assesseur_roles %}
+    <div class="assesseur-chip">
+      {{ r.judge.name }}
+      <form method="post" style="display:inline">
+        <input type="hidden" name="action" value="delete_role">
+        <input type="hidden" name="role_id" value="{{ r.id }}">
+        <button class="chip-remove" onclick="return confirm('Retirer {{ r.judge.name }} ?')">×</button>
+      </form>
+    </div>
+    {% else %}
+    <span style="color:#90a4ae;font-size:.85rem">Aucun assesseur assigné</span>
+    {% endfor %}
+  </div>
+
+  <form method="post" class="form-row">
+    <input type="hidden" name="action" value="add_role">
+    <input type="hidden" name="role" value="assesseur">
+    <div class="form-group" style="flex:1">
+      <label>Ajouter un assesseur</label>
+      <select name="judge_id" required>
+        <option value="">— Choisir un juge —</option>
+        {% for j in all_judges %}
+          {% if (j.id, 'assesseur') not in assigned_combos %}
+          <option value="{{ j.id }}">{{ j.name }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+    </div>
+    <div style="align-self:flex-end">
+      <button type="submit" class="btn btn-primary">Ajouter</button>
+    </div>
+  </form>
+</div>
+
+<div style="display:flex;gap:.75rem">
+  <a href="{{ url_for('agenda', chamber_id=chamber.id) }}" class="btn btn-primary">Voir l'agenda</a>
+  <a href="{{ url_for('planning_current', chamber_id=chamber.id) }}" class="btn btn-secondary">Planning mensuel</a>
+  <a href="{{ url_for('config_chambers') }}" class="btn btn-secondary">Retour</a>
+</div>
+{% endblock %}

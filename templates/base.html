@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Tribunal — Plannings{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <nav>
+    <a class="nav-brand" href="{{ url_for('index') }}">⚖️ Tribunal</a>
+    <div class="nav-links">
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('index') }}">Chambres</a>
+        <a href="{{ url_for('day_today') }}">Aujourd'hui</a>
+        {% if current_user.is_admin %}
+        <a href="{{ url_for('stats') }}">Statistiques</a>
+        {% endif %}
+        <a href="{{ url_for('my_schedule') }}">Mon planning</a>
+        {% if current_user.is_admin %}
+          <a href="{{ url_for('config_index') }}">Configuration</a>
+        {% endif %}
+        <span class="nav-sep"></span>
+        <span class="nav-user">{{ current_user.name }}</span>
+        <a href="{{ url_for('logout') }}" class="btn btn-secondary btn-sm">Déconnexion</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-container">
+      {% for cat, msg in messages %}
+      <div class="flash flash-{{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
+
+  <main>{% block content %}{% endblock %}</main>
+</body>
+</html>

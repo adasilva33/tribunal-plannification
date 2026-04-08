@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ chamber.name }} — Planning</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Times New Roman', Georgia, serif;
+      font-size: 10.5pt;
+      color: #000;
+      background: #fff;
+    }
+
+    /* ── Screen wrapper ── */
+    @media screen {
+      body { padding: 1.5cm; max-width: 27cm; margin: 0 auto;
+             box-shadow: 0 0 20px rgba(0,0,0,.2); min-height: 100vh; }
+    }
+
+    /* ── Print button (screen only) ── */
+    .print-btn {
+      position: fixed; top: 1rem; right: 1rem;
+      padding: .5rem 1.4rem;
+      background: #0d2950; color: #fff;
+      border: none; border-radius: 6px;
+      font-family: system-ui, sans-serif; font-size: 14px; cursor: pointer;
+    }
+    @media print { .print-btn { display: none; } }
+
+    /* ── Header ── */
+    .print-header { text-align: center; margin-bottom: .8cm; padding-bottom: .4cm;
+                    border-bottom: 2.5pt solid #000; }
+    .print-header h1 { font-size: 16pt; font-weight: bold; letter-spacing: .05em; }
+    .print-header h2 { font-size: 13pt; font-weight: normal; margin-top: .2cm; }
+    .header-meta { font-size: 9.5pt; margin-top: .35cm; color: #333; }
+    .header-meta strong { color: #000; }
+    .pool { font-size: 9pt; margin-top: .25cm; color: #444;
+            border-top: 1pt solid #ccc; padding-top: .2cm; }
+
+    /* ── Month heading ── */
+    .month-heading {
+      font-size: 11pt; font-weight: bold; text-transform: uppercase;
+      letter-spacing: .08em;
+      margin: .6cm 0 .2cm;
+      padding-bottom: .15cm;
+      border-bottom: 1.5pt solid #000;
+    }
+    .month-group { page-break-inside: avoid; margin-bottom: .3cm; }
+
+    /* ── Table ── */
+    table { width: 100%; border-collapse: collapse; margin-bottom: .2cm; }
+    th {
+      background: #e8edf5;
+      font-size: 8.5pt; font-weight: bold;
+      text-transform: uppercase; letter-spacing: .04em;
+      padding: 4px 6px;
+      border: 1pt solid #999;
+      text-align: left;
+    }
+    td {
+      padding: 4px 6px;
+      font-size: 9.5pt;
+      border: 1pt solid #ccc;
+      vertical-align: top;
+    }
+
+    /* ── Row colours ── */
+    tr.row-ferie td, tr.row-vacation td {
+      color: #555; font-style: italic; background: #f0f0f0;
+    }
+    tr.row-special td  { background: #fffde7; }
+    tr.row-pas td      { background: #fff3f3; color: #999; }
+    tr.row-incomplete td { background: #fff8e1; }
+
+    @media print {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* ── Judge chips (print) ── */
+    .judge-name { display: inline; }
+    .judge-name + .judge-name::before { content: ', '; }
+    .missing { color: #c00; font-style: italic; font-size: 8.5pt; }
+  </style>
+</head>
+<body>
+  <button class="print-btn" onclick="window.print()">🖨 Imprimer</button>
+
+  <!-- Header -->
+  <div class="print-header">
+    <h1>PLANNING DES AUDIENCES</h1>
+    <h2>{{ chamber.name }}</h2>
+    {% if jy %}
+    <div class="header-meta">
+      Année judiciaire
+      <strong>{{ jy.start_date.strftime('%d/%m/%Y') }}</strong>
+      au
+      <strong>{{ jy.end_date.strftime('%d/%m/%Y') }}</strong>
+      &nbsp;|&nbsp;
+      {% if chamber.days_display %}Jours : <strong>{{ chamber.days_display }}</strong>{% endif %}
+      {% if chamber.start_time %}&nbsp;|&nbsp; Heure : <strong>{{ chamber.start_time }}</strong>{% endif %}
+    </div>
+    {% endif %}
+    {% if chamber.assesseur_roles %}
+    <div class="pool">
+      Pool assesseurs :
+      {{ chamber.assesseur_roles|map(attribute='name')|join(' &mdash; ')|safe }}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Monthly groups -->
+  {% for group in groups %}
+  <div class="month-group">
+    <div class="month-heading">{{ group.label }}</div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:70px">Jour</th>
+          <th style="width:85px">Date</th>
+          <th style="width:85px">Statut</th>
+          <th style="width:145px">Président audience</th>
+          <th>Assesseurs</th>
+          <th style="width:130px">Note</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in group.sessions %}
+        {% set row_class = {
+          'audience':    'row-audience',
+          'special':     'row-special',
+          'ferie':       'row-ferie',
+          'vacation':    'row-vacation',
+          'pas_audience':'row-pas',
+        }[s.status] %}
+        <tr class="{{ row_class }}{% if s.status=='audience' and not s.is_complete %} row-incomplete{% endif %}">
+          <td>{{ s.weekday }}</td>
+          <td>{{ s.date.strftime('%d/%m/%Y') }}</td>
+          <td>
+            {% if s.status == 'audience' %}
+              {% if s.is_complete %}Audience{% else %}<span class="missing">⚠ Incomplet</span>{% endif %}
+            {% elif s.status == 'ferie' %}FÉRIÉ
+            {% elif s.status == 'vacation' %}VACATION
+            {% elif s.status == 'pas_audience' %}Pas d'audience
+            {% elif s.status == 'special' %}Spécial
+            {% endif %}
+          </td>
+          <td>
+            {% if s.presidents %}
+              {% for a in s.presidents %}
+              <span class="judge-name">{{ a.judge.name }}</span>
+              {% endfor %}
+            {% elif s.status == 'audience' %}
+              <span class="missing">— non assigné —</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if s.assesseurs_assigned %}
+              {% for a in s.assesseurs_assigned %}
+              <span class="judge-name">{{ a.judge.name }}</span>
+              {% endfor %}
+            {% elif s.status == 'audience' %}
+              <span class="missing">— non assignés —</span>
+            {% endif %}
+          </td>
+          <td>{{ s.note }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endfor %}
+</body>
+</html>

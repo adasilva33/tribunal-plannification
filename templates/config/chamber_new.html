@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Nouvelle chambre{% endblock %}
+{% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('config_index') }}">Configuration</a> ›
+  <a href="{{ url_for('config_chambers') }}">Chambres</a> › Nouvelle chambre
+</div>
+<h1>Nouvelle chambre</h1>
+
+<div class="card" style="max-width:600px">
+  <form method="post">
+    <div class="form-group" style="margin-bottom:1rem">
+      <label for="name">Intitulé <span style="color:#b71c1c">*</span></label>
+      <input type="text" id="name" name="name" required autofocus
+             placeholder="ex : 10ème chambre - SOCIAL" style="width:100%">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="start_time">Heure de début</label>
+        <input type="text" id="start_time" name="start_time" placeholder="ex : 14h00">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:1rem">
+      <label>Jours de séance</label>
+      <div class="checkbox-group">
+        {% for wd_num, wd_name in all_weekdays %}
+        <label>
+          <input type="checkbox" name="weekdays" value="{{ wd_num }}"> {{ wd_name }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div style="display:flex;gap:.75rem;margin-top:1.5rem">
+      <button type="submit" class="btn btn-primary">Créer la chambre</button>
+      <a href="{{ url_for('config_chambers') }}" class="btn btn-secondary">Annuler</a>
+    </div>
+  </form>
+  <p style="color:#546e7a;font-size:.82rem;margin-top:1rem">
+    Après création, vous pourrez ajouter les juges (président + assesseurs) depuis la page de modification.
+  </p>
+</div>
+{% endblock %}

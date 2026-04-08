@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Dates spéciales — Configuration{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('config_index') }}">Configuration</a>
+  <span>›</span> Dates spéciales
+</div>
+
+<h1>Dates spéciales</h1>
+
+<div class="card">
+  <table class="config-table" style="margin-bottom:1.5rem">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Chambre</th>
+        <th>Description</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for sd in special_dates %}
+      <tr>
+        <td>{{ sd.date.strftime('%d/%m/%Y') }}</td>
+        <td>{{ sd.chamber.name if sd.chamber else '— (globale)' }}</td>
+        <td>{{ sd.description }}</td>
+        <td>
+          <form method="post" style="display:inline">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="special_date_id" value="{{ sd.id }}">
+            <button type="submit" class="btn btn-danger btn-sm"
+                    onclick="return confirm('Supprimer cette date spéciale ?')">Supprimer</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" style="color:#546e7a;text-align:center">Aucune date spéciale</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h3>Ajouter une date spéciale</h3>
+  <form method="post">
+    <input type="hidden" name="action" value="add">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="sd_date">Date</label>
+        <input type="date" id="sd_date" name="date" required>
+      </div>
+      <div class="form-group">
+        <label for="sd_chamber">Chambre</label>
+        <select id="sd_chamber" name="chamber_id">
+          <option value="">— Toutes les chambres —</option>
+          {% for c in chambers %}
+          <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group" style="flex:1">
+        <label for="sd_desc">Description</label>
+        <input type="text" id="sd_desc" name="description" placeholder="ex : Appel causes" required>
+      </div>
+      <div>
+        <button type="submit" class="btn btn-primary">Ajouter</button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

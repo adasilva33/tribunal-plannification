@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Chambres — Configuration{% endblock %}
+{% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('config_index') }}">Configuration</a> › Chambres
+</div>
+
+<div class="toolbar">
+  <h1 style="margin:0">Chambres</h1>
+  <a href="{{ url_for('config_chamber_new') }}" class="btn btn-primary">+ Nouvelle chambre</a>
+</div>
+
+<div class="card">
+  <table class="config-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Chambre</th>
+        <th>Jours</th>
+        <th>Heure</th>
+        <th>Président</th>
+        <th>Assesseurs</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for chamber in chambers %}
+      <tr>
+        <td style="color:#90a4ae">{{ loop.index }}</td>
+        <td><strong>{{ chamber.name }}</strong></td>
+        <td>{{ chamber.days_display or '—' }}</td>
+        <td>{{ chamber.start_time or '—' }}</td>
+        <td>{{ chamber.president or '—' }}</td>
+        <td>{{ chamber.assesseur_roles|length }}</td>
+        <td>
+          <a href="{{ url_for('config_chamber_edit', chamber_id=chamber.id) }}"
+             class="btn btn-secondary btn-sm">Modifier</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

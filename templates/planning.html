@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% block title %}Planning — {{ chamber.name }} — {{ month_label }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('index') }}">Accueil</a> ›
+  <a href="{{ url_for('agenda', chamber_id=chamber.id) }}">{{ chamber.name }}</a> ›
+  Planning
+</div>
+
+<!-- Month navigation -->
+<div class="toolbar" style="margin-bottom:1rem">
+  <div style="display:flex;align-items:center;gap:1rem">
+    <a href="{{ url_for('planning', chamber_id=chamber.id, year=prev[0], month=prev[1]) }}"
+       class="btn btn-secondary btn-sm">← Mois précédent</a>
+    <h1 style="margin:0;font-size:1.3rem">{{ chamber.name }} — {{ month_label }}</h1>
+    <a href="{{ url_for('planning', chamber_id=chamber.id, year=nxt[0], month=nxt[1]) }}"
+       class="btn btn-secondary btn-sm">Mois suivant →</a>
+  </div>
+  <div style="display:flex;gap:.5rem;align-items:center">
+    <span class="stat-chip">
+      <span class="dot dot-audience"></span>
+      {{ complete }}/{{ total }} séances complètes
+    </span>
+    <a href="{{ url_for('agenda', chamber_id=chamber.id) }}" class="btn btn-secondary btn-sm">Agenda annuel</a>
+  </div>
+</div>
+
+{% if not sessions_data %}
+<div class="card" style="text-align:center;color:#546e7a;padding:2rem">
+  Aucune séance ce mois-ci pour cette chambre.
+</div>
+{% endif %}
+
+{% for s in sessions_data %}
+<div class="planning-session {{ 'ps-audience' if s.status == 'audience' else 'ps-off' }}
+            {{ 'ps-complete' if s.is_complete else '' }}"
+     id="s-{{ s.date.isoformat() }}">
+
+  <!-- Session header -->
+  <div class="ps-header">
+    <div class="ps-date">
+      <strong>{{ s.date | fr_date }}</strong>
+    </div>
+    <div style="display:flex;gap:.5rem;align-items:center">
+      {% if s.status == 'audience' %}
+        {% if s.is_complete %}
+          <span class="dc-status ok">✓ Complet</span>
+        {% else %}
+          <span class="dc-status warn">
+            ⚠ {{ s.presidents|length }} président · {{ s.assesseurs|length }}/2 assesseurs
+          </span>
+        {% endif %}
+      {% else %}
+        <span class="badge badge-{{ s.status }}">
+          {% if s.status == 'ferie' %}Férié — {{ s.note }}
+          {% elif s.status == 'vacation' %}{{ s.note }}
+          {% elif s.status == 'pas_audience' %}Pas d'audience — {{ s.note }}
+          {% elif s.status == 'special' %}{{ s.note }}
+          {% endif %}
+        </span>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if s.status == 'audience' %}
+  <div class="ps-body">
+
+    <!-- Président -->
+    <div class="ps-role-block">
+      <div class="ps-role-title">Président</div>
+      <div class="ps-chips">
+        {% for a in s.presidents %}
+        <span class="person-chip chip-pres">
+          {{ a.judge.name }}
+          {% if current_user.is_admin %}
+          <form method="post" style="display:inline">
+            <input type="hidden" name="action" value="unassign">
+            <input type="hidden" name="assignment_id" value="{{ a.id }}">
+            <input type="hidden" name="date" value="{{ s.date.isoformat() }}">
+            <button class="chip-remove" title="Retirer"
+                    onclick="return confirm('Retirer {{ a.judge.name }} ?')">×</button>
+          </form>
+          {% endif %}
+        </span>
+        {% endfor %}
+
+        {% if current_user.is_admin and s.available_presidents %}
+        <form method="post" class="inline-assign-form">
+          <input type="hidden" name="action" value="assign">
+          <input type="hidden" name="date" value="{{ s.date.isoformat() }}">
+          <input type="hidden" name="role" value="president">
+          <select name="judge_id" class="assign-select" required>
+            <option value="">+ Ajouter président…</option>
+            {% for j in s.available_presidents %}
+            <option value="{{ j.id }}">{{ j.name }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn btn-primary btn-sm">OK</button>
+        </form>
+        {% elif current_user.is_admin and not s.available_presidents and not s.presidents %}
+        <span class="dc-empty">Aucun président disponible ce jour</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Assesseurs -->
+    <div class="ps-role-block">
+      <div class="ps-role-title">Assesseurs ({{ s.assesseurs|length }} / min. 2)</div>
+      <div class="ps-chips">
+        {% for a in s.assesseurs %}
+        <span class="person-chip chip-asses">
+          {{ a.judge.name }}
+          {% if current_user.is_admin %}
+          <form method="post" style="display:inline">
+            <input type="hidden" name="action" value="unassign">
+            <input type="hidden" name="assignment_id" value="{{ a.id }}">
+            <input type="hidden" name="date" value="{{ s.date.isoformat() }}">
+            <button class="chip-remove" title="Retirer"
+                    onclick="return confirm('Retirer {{ a.judge.name }} ?')">×</button>
+          </form>
+          {% endif %}
+        </span>
+        {% endfor %}
+
+        {% if current_user.is_admin and s.available_assesseurs %}
+        <form method="post" class="inline-assign-form">
+          <input type="hidden" name="action" value="assign">
+          <input type="hidden" name="date" value="{{ s.date.isoformat() }}">
+          <input type="hidden" name="role" value="assesseur">
+          <select name="judge_id" class="assign-select" required>
+            <option value="">+ Ajouter assesseur…</option>
+            {% for j in s.available_assesseurs %}
+            <option value="{{ j.id }}">{{ j.name }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn btn-primary btn-sm">OK</button>
+        </form>
+        {% elif current_user.is_admin and not s.available_assesseurs %}
+        <span class="dc-empty">Aucun assesseur disponible ce jour</span>
+        {% endif %}
+      </div>
+    </div>
+
+  </div><!-- ps-body -->
+  {% endif %}
+</div><!-- planning-session -->
+{% endfor %}
+{% endblock %}

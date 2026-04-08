@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}{{ target | fr_date }} — Vue du jour{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+  <div style="display:flex;align-items:center;gap:1rem">
+    <a href="{{ url_for('day_view', year=prev_d.year, month=prev_d.month, day=prev_d.day) }}"
+       class="btn btn-secondary btn-sm">← {{ prev_d.strftime('%d/%m') }}</a>
+    <h1 style="margin:0">{{ target | fr_date }}</h1>
+    <a href="{{ url_for('day_view', year=next_d.year, month=next_d.month, day=next_d.day) }}"
+       class="btn btn-secondary btn-sm">{{ next_d.strftime('%d/%m') }} →</a>
+  </div>
+  <a href="{{ url_for('day_today') }}" class="btn btn-secondary btn-sm">Aujourd'hui</a>
+</div>
+
+{% if not day_data %}
+<div class="card" style="text-align:center;color:#546e7a;padding:3rem">
+  Aucune chambre ne siège ce jour<br>
+  <small style="font-size:.85rem">(week-end ou pas de chambre programmée)</small>
+</div>
+{% endif %}
+
+<div class="day-grid">
+{% for item in day_data %}
+  <div class="day-card {% if item.status == 'audience' %}{% if item.is_complete %}dc-complete{% else %}dc-incomplete{% endif %}{% else %}dc-off{% endif %}">
+    <div class="dc-header">
+      <div>
+        <strong>{{ item.chamber.name }}</strong>
+        {% if item.chamber.start_time %}<span class="dc-time">{{ item.chamber.start_time }}</span>{% endif %}
+      </div>
+      <div style="display:flex;gap:.4rem;align-items:center">
+        {% if item.status == 'audience' %}
+          {% if item.is_complete %}
+            <span class="dc-status ok">✓ Complet</span>
+          {% else %}
+            <span class="dc-status warn">⚠ Incomplet</span>
+          {% endif %}
+        {% else %}
+          <span class="badge badge-{{ item.status }}">
+            {% if item.status == 'ferie' %}Férié
+            {% elif item.status == 'vacation' %}Vacation
+            {% elif item.status == 'pas_audience' %}Pas d'audience
+            {% elif item.status == 'special' %}Spécial
+            {% endif %}
+          </span>
+        {% endif %}
+        <a href="{{ url_for('planning', chamber_id=item.chamber.id, year=target.year, month=target.month) }}#s-{{ target.isoformat() }}"
+           class="btn btn-secondary btn-sm">Planifier</a>
+      </div>
+    </div>
+
+    {% if item.note %}
+    <div class="dc-note">{{ item.note }}</div>
+    {% endif %}
+
+    {% if item.status == 'audience' %}
+    <div class="dc-assignments">
+      <div class="dc-role-group">
+        <span class="dc-role-label">Président</span>
+        {% if item.presidents %}
+          {% for a in item.presidents %}
+          <span class="person-chip chip-pres">{{ a.judge.name }}</span>
+          {% endfor %}
+        {% else %}
+          <span class="dc-empty">Non assigné</span>
+        {% endif %}
+      </div>
+      <div class="dc-role-group">
+        <span class="dc-role-label">Assesseurs ({{ item.assesseurs|length }})</span>
+        {% if item.assesseurs %}
+          {% for a in item.assesseurs %}
+          <span class="person-chip chip-asses">{{ a.judge.name }}</span>
+          {% endfor %}
+        {% else %}
+          <span class="dc-empty">Non assignés</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+{% endfor %}
+</div>
+{% endblock %}

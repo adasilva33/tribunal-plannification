@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Configuration{% endblock %}
+{% block content %}
+<h1>Configuration</h1>
+<div class="config-nav">
+  <a href="{{ url_for('config_year') }}" class="config-nav-item">
+    <div class="icon">📅</div>
+    <div class="title">Année judiciaire</div>
+    <div class="desc">Dates de début/fin et vacations judiciaires</div>
+  </a>
+  <a href="{{ url_for('config_chambers') }}" class="config-nav-item">
+    <div class="icon">🏛️</div>
+    <div class="title">Chambres</div>
+    <div class="desc">Créer, modifier jours, horaires, composition</div>
+  </a>
+  <a href="{{ url_for('config_judges') }}" class="config-nav-item">
+    <div class="icon">👤</div>
+    <div class="title">Juges</div>
+    <div class="desc">Gérer les comptes et accès des juges</div>
+  </a>
+  <a href="{{ url_for('config_special_dates') }}" class="config-nav-item">
+    <div class="icon">⭐</div>
+    <div class="title">Dates spéciales</div>
+    <div class="desc">Audiences exceptionnelles par chambre</div>
+  </a>
+  <a href="{{ url_for('config_jsa') }}" class="config-nav-item">
+    <div class="icon">🚫</div>
+    <div class="title">Jours sans audience</div>
+    <div class="desc">Fermetures exceptionnelles toutes chambres</div>
+  </a>
+</div>
+{% endblock %}
