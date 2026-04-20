@@ -14,9 +14,15 @@ from models import (
 )
 
 # ── App setup ──────────────────────────────────────────────────────────────
+import os
+
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tribunal.db'
-app.config['SECRET_KEY'] = 'tribunal-planning-secret-2025'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
+    'DATABASE_URL', 'sqlite:///tribunal.db'
+)
+app.config['SECRET_KEY'] = os.environ.get(
+    'SECRET_KEY', 'tribunal-planning-secret-2025'
+)
 db.init_app(app)
 
 login_manager = LoginManager(app)
@@ -874,4 +880,8 @@ if __name__ == '__main__':
         if Judge.query.count() == 0:
             from seed import seed
             seed()
-    app.run(debug=True)
+    app.run(
+        host='0.0.0.0',
+        port=int(os.environ.get('PORT', 5000)),
+        debug=os.environ.get('FLASK_DEBUG', '0') == '1',
+    )
