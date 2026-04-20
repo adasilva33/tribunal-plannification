@@ -20,7 +20,17 @@ app = Flask(__name__)
 _db_url = os.environ.get('DATABASE_URL', 'sqlite:///tribunal.db')
 if _db_url.startswith('postgres://'):
     _db_url = _db_url.replace('postgres://', 'postgresql://', 1)
+
+_engine_kwargs = {}
+if _db_url.startswith('postgresql://') and '+' not in _db_url.split('://')[0]:
+    import ssl, certifi
+    _db_url = _db_url.replace('?sslmode=require', '').replace('&sslmode=require', '')
+    _db_url = _db_url.replace('postgresql://', 'postgresql+pg8000://', 1)
+    _ssl_ctx = ssl.create_default_context(cafile=certifi.where())
+    _engine_kwargs = {'connect_args': {'ssl_context': _ssl_ctx}}
+
 app.config['SQLALCHEMY_DATABASE_URI'] = _db_url
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = _engine_kwargs
 app.config['SECRET_KEY'] = os.environ.get(
     'SECRET_KEY', 'tribunal-planning-secret-2025'
 )
