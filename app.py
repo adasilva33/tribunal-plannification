@@ -17,9 +17,10 @@ from models import (
 import os
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
-    'DATABASE_URL', 'sqlite:///tribunal.db'
-)
+_db_url = os.environ.get('DATABASE_URL', 'sqlite:///tribunal.db')
+if _db_url.startswith('postgres://'):
+    _db_url = _db_url.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = _db_url
 app.config['SECRET_KEY'] = os.environ.get(
     'SECRET_KEY', 'tribunal-planning-secret-2025'
 )
